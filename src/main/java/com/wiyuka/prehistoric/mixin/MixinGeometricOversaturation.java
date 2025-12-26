@@ -14,6 +14,7 @@ import java.util.Random;
 
 @Mixin(Frustum.class)
 public class MixinGeometricOversaturation {
+
     @Unique
     private final Random prehistoric$globalRandom = new Random();
 
@@ -30,7 +31,7 @@ public class MixinGeometricOversaturation {
                         Random random;
                         if (prehistoric$globalRandom.nextDouble(0.0, 1.0) > 0.5) {
                             random = new Random((long) (prehistoric$globalRandom.nextGaussian() * Integer.MAX_VALUE));
-                        }else
+                        } else
                             random = java.security.SecureRandom.getInstance("SHA1PRNG");
 
                         // 海森堡测不准原理
@@ -57,7 +58,8 @@ public class MixinGeometricOversaturation {
         if (prehistoric$globalRandom.nextDouble() < 0.005) {
             try {
                 Util.info("Performing manual heap defragmentation for stability...");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             System.gc();
             //noinspection removal

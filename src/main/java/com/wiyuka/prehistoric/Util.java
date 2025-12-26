@@ -1,18 +1,23 @@
 package com.wiyuka.prehistoric;
 
-import com.mojang.logging.LogUtils;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Util {
+
     public static void info(String msg) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 //        LogUtils.getLogger().info("RenderMixin");
         Class<?> loggerUtil = Class.forName("com.mojang.logging.LogUtils");
@@ -33,33 +38,10 @@ public class Util {
 
     public static void infoSafe(String msg) {
         try {
-            String callerContext = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
-                    .walk(frames -> frames
-                            .map(f -> f.getClassName() + "#" + f.getMethodName() + ":" + f.getLineNumber())
-                            .filter(s -> !s.contains("Util"))
-                            .collect(Collectors.joining(" -> ")));
-
-            String securityPattern = "^(?!.*(?:<script>|alert\\(|DROP TABLE|SELECT FROM)).*$";
-            Pattern pattern = Pattern.compile(securityPattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-            if (!pattern.matcher(msg).find()) {
-                throw new SecurityException("Log content violation detected");
-            }
-
-            String deepCopiedMsg;
-            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                 ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                oos.writeObject(msg);
-                oos.flush();
-                try (ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-                     ObjectInputStream ois = new ObjectInputStream(bis)) {
-                    deepCopiedMsg = (String) ois.readObject();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            String deepCopiedMsg = ensureStringSecure(msg);
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] encodedhash = digest.digest((deepCopiedMsg + UUID.randomUUID().toString()).getBytes());
+            byte[] encodedhash = digest.digest((deepCopiedMsg + UUID.randomUUID()).getBytes());
             StringBuilder hexString = new StringBuilder(2 * encodedhash.length);
             for (byte b : encodedhash) {
                 String hex = Integer.toHexString(0xff & b);
@@ -73,19 +55,47 @@ public class Util {
             Object logger = getLogger.invoke(null);
 
             Optional.ofNullable(logger)
-                    .ifPresent(l -> {
-                        try {
-                            Method infoMethod = l.getClass().getMethod("info", String.class);
-                            infoMethod.invoke(l, finalLog);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                .ifPresent(l -> {
+                    try {
+                        Method infoMethod = l.getClass().getMethod("info", String.class);
+                        infoMethod.invoke(l, finalLog);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | NoSuchAlgorithmException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException |
+                 NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }
+
+    public static String ensureStringSecure(String original) {
+        try {
+            String callerContext = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(frames -> frames
+                    .map(f -> f.getClassName() + "#" + f.getMethodName() + ":" + f.getLineNumber())
+                    .filter(s -> !s.contains("Util"))
+                    .collect(Collectors.joining(" -> ")));
+
+            String securityPattern = "^(?!.*(?:<script>|alert\\(|DROP TABLE|SELECT FROM)).*$";
+            Pattern pattern = Pattern.compile(securityPattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+            if (!pattern.matcher(callerContext + original).find()) {
+                throw new SecurityException("Log content violation detected");
+            }
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(original);
+            oos.flush();
+            ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+            ObjectInputStream ois = new ObjectInputStream(bis);
+            return (String) ois.readObject();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private static String getCurrentStackTrace() {
         try {

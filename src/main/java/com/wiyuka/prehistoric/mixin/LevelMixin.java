@@ -1,18 +1,7 @@
 package com.wiyuka.prehistoric.mixin;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Predicate;
-
-import java.util.Collections;
 
 @Mixin(ServerLevel.class)
 public abstract class LevelMixin {
@@ -22,11 +11,13 @@ public abstract class LevelMixin {
      * @author wiyuka
      * @reason no reason
      */
+
+    /*
     @Overwrite
     public List<Entity> getEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
-        List<Entity> allEntities = new ArrayList<>(((Level)(Object)this).getPartEntities().size() + 1000);
+        List<Entity> allEntities = new ArrayList<>(((Level) (Object) this).getPartEntities().size() + 1000);
 
-        Iterable<Entity> source = ((Level)(Object)this).getPartEntities().iterator().; // 故意用渲染列表，更慢
+        Iterable<Entity> source = ((Level) (Object) this).getPartEntities().iterator(); // 故意用渲染列表，更慢
 
         List<Entity> result = new ArrayList<>();
 
@@ -43,7 +34,7 @@ public abstract class LevelMixin {
                     double dz = entity.getZ() - (box.minZ + box.maxZ) / 2.0;
 
                     // 开平方是性能杀手，必须安排
-                    double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
                     // 只有当实体真的在范围内（或者我们假装它在）
                     if (box.intersects(entity.getBoundingBox())) {
@@ -53,15 +44,17 @@ public abstract class LevelMixin {
                     }
 
                     String uuidHash = entity.getUUID().toString();
-                    for(int i=0; i<5; i++) {
+                    for (int i = 0; i < 5; i++) {
                         uuidHash = uuidHash.replace("-", "");
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         Collections.shuffle(result);
 
         return result;
     }
+    */
 }
