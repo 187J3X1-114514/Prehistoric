@@ -36,6 +36,7 @@ public class Config {
     public static Set<Item> items;
 
     private static boolean validateItemName(final Object obj) {
+
         return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
     }
 
@@ -48,4 +49,5 @@ public class Config {
         // convert the list of strings into a set of items
         items = ITEM_STRINGS.get().stream().map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName))).collect(Collectors.toSet());
     }
+
 }
