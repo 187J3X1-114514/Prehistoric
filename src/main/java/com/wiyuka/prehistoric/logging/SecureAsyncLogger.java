@@ -1,5 +1,6 @@
 package com.wiyuka.prehistoric.logging;
 
+import com.wiyuka.prehistoric.util.ThreadedExecutor;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.slf4j.Log4jLogger;
 import org.apache.logging.slf4j.Log4jMarkerFactory;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import static com.wiyuka.prehistoric.Util.ensureStringSecure;
@@ -36,7 +38,8 @@ public class SecureAsyncLogger extends Log4jLogger {
         }
     };
 
-    private static final CopyOnWriteArrayList<Runnable> pendingLogTasks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Runnable> pendingLogTasks = new CopyOnWriteArrayList<>();
+    private final Executor executor = ThreadedExecutor.newExecutor();
 
     private SecureAsyncLogger(Logger delegate) {
         super(FACTORY_GETTER.apply(delegate), LOGGER_GETTER.apply(delegate), delegate.getName());
@@ -45,7 +48,7 @@ public class SecureAsyncLogger extends Log4jLogger {
             while (true) {
                 if (!pendingLogTasks.isEmpty()) {
                     synchronized (pendingLogTasks) {
-                        pendingLogTasks.removeFirst().run();
+                        executor.execute(pendingLogTasks.removeFirst());
                     }
                 }
             }
