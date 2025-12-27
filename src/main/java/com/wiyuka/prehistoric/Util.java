@@ -18,7 +18,7 @@ import static com.wiyuka.prehistoric.util.ThreadedExecutor.supplyAsync;
 
 public class Util {
 
-    private static Random random = new Random();
+    private static final Random random = new Random();
 
     public static void info(String msg) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> loggerUtil = Class.forName("com.mojang.logging.LogUtils");
